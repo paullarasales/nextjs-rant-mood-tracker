@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import ProtectedRoute from "../components/ProtectedRoute";
 import RantJournal from "../components/RantJournal";
-import TestComponent from '../components/TestComponent';
 
 export default function Home() {
   const [rants, setRants] = useState([]);
@@ -13,7 +12,6 @@ export default function Home() {
       <div className="max-w-4xl mx-auto px-4">
         <ProtectedRoute>
           <RantJournal addRant={addRant} />
-          <TestComponent />
           <div className="mt-8">
             <h3 className="text-xl font-medium text-gray-600 mb-4">Rant Entries</h3>
             <ul className="space-y-4">
