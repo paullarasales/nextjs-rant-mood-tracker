@@ -47,6 +47,8 @@ export default function RantJournal({ addRant }) {
     };
 
     return (
+        <>
+        <h1 className="text-4xl text-center font-semibold text-black tracking-wide">Rant and Mood Tracker</h1>
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
             <div>
                 <label className="block text-gray-700 font-medium">Title</label>
@@ -101,5 +103,6 @@ export default function RantJournal({ addRant }) {
                 className="w-full py-2 px-4 bg-blue-500 text-whitw rounded-lg hover:bg-blue-600"
             >Add Rant</button>
         </form>
+        </>
     )
 }   
