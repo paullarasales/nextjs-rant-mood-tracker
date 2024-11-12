@@ -62,7 +62,7 @@ export default function RantJournal({ addRant }) {
             </div>
             <div>
                 <label className="block text-gray-700 font-medium">Choose Your Mood</label>
-                <div className="flex space-x-4 mt-2">
+                <div className="flex space-x-2 mt-2">
                     {moods.map((mood) => (
                         <button
                             key={mood.label}
