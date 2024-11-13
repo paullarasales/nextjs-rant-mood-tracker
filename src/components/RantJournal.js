@@ -20,16 +20,21 @@ export default function RantJournal() {
   useEffect(() => {
     const fetchRants = async () => {
       try {
-        const response = await fetch(`/api/rants?timestamp=${new Date().getTime()}`);
+        const response = await fetch('/api/rants');
         const data = await response.json();
-        console.log(data);
-        setRants(data);
+        
+        if (Array.isArray(data)) {
+          setRants(data);
+        } else {
+          console.error('Data fetched is not an array:', data);
+        }
       } catch (error) {
-        console.error('Error fetching rants: ', error);
+        console.error('Error fetching rants:', error);
       }
     };
     fetchRants();
   }, []);
+  
 
   const fetchGif = async (moodLabel) => {
     try {
@@ -151,31 +156,20 @@ export default function RantJournal() {
 
       <div className="mt-6">
         <h3 className="text-xl font-medium text-gray-600 mb-4">Rant Entries</h3>
-        <ul className="space-y-4">
-          {rants.map((rant, index) => (
-            <li
-              key={index}
-              className="p-5 rounded-lg bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-lg font-semibold text-gray-800">{rant.mood}</span>
-                <span className="text-sm text-gray-500">{rant.date}</span>
-              </div>
-              <div className="text-gray-700">
-                <p className="font-semibold text-gray-800 text-lg">{rant.title}</p>
-                <p className="text-gray-600 mt-1">{rant.content}</p>
-                {rant.gifUrl && (
-                  <img
-                    src={rant.gifUrl}
-                    alt="Rant GIF"
-                    className="mt-4 w-full max-h-64 object-cover rounded-lg shadow-md"
-                  />
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
+          <ul className="space-y-4">
+            {(Array.isArray(rants) ? rants : []).map((rant, index) => (
+              <li
+                key={index}
+                className="p-5 rounded-lg bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+              >
+                <h3 className="text-xl font-semibold">{rant.title}</h3>
+                <p className="text-gray-700">{rant.content}</p>
+                {rant.gifUrl && <img src={rant.gifUrl} alt="Gif" className="mt-3" />}
+                <div className="text-sm text-gray-500 mt-2">{rant.date}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
     </>
   );
 }
