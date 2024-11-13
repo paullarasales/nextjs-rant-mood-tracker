@@ -18,15 +18,18 @@ export default function RantJournal() {
   ];
 
   useEffect(() => {
-    const savedRants = JSON.parse(localStorage.getItem('rants')) || [];
-    setRants(savedRants);
+    const fetchRants = async () => {
+      try {
+        const response = await fetch(`/api/rants?timestamp=${new Date().getTime()}`);
+        const data = await response.json();
+        console.log(data);
+        setRants(data);
+      } catch (error) {
+        console.error('Error fetching rants: ', error);
+      }
+    };
+    fetchRants();
   }, []);
-
-  useEffect(() => {
-    if (rants.length > 0) {
-      localStorage.setItem('rants', JSON.stringify(rants));
-    }
-  }, [rants]);
 
   const fetchGif = async (moodLabel) => {
     try {
@@ -47,7 +50,7 @@ export default function RantJournal() {
     }
   }, [selectedMood]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const newRant = {
@@ -58,12 +61,28 @@ export default function RantJournal() {
       date: new Date().toLocaleDateString(),
     };
 
-    setRants([newRant, ...rants]);
+    try {
+      const response = await fetch('/api/rants', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRant),
+      });
 
-    setTitle('');
-    setContent('');
-    setSelectedMood(null);
-    setGifUrl('');
+      if (response.ok) {
+        const savedRant = await response.json();
+        setRants([savedRant, ...rants]);
+        setTitle('');
+        setContent('');
+        setSelectedMood(null);
+        setGifUrl('');
+      } else {
+        console.error('Error saving rant: ', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving rant: ', error);
+    }
   };
 
   return (
