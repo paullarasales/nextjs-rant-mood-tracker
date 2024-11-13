@@ -1,4 +1,3 @@
-'use client';
 import { useState, useEffect } from 'react';
 
 export default function RantJournal() {
@@ -17,24 +16,20 @@ export default function RantJournal() {
     { emoji: '🤔', label: 'Thoughtful' },
   ];
 
+  // Fetch rants from the database
+  const fetchRants = async () => {
+    try {
+      const response = await fetch('/api/rants');
+      const data = await response.json();
+      setRants(data);
+    } catch (error) {
+      console.error('Error fetching rants: ', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchRants = async () => {
-      try {
-        const response = await fetch('/api/rants');
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          setRants(data);
-        } else {
-          console.error('Data fetched is not an array:', data);
-        }
-      } catch (error) {
-        console.error('Error fetching rants:', error);
-      }
-    };
     fetchRants();
   }, []);
-  
 
   const fetchGif = async (moodLabel) => {
     try {
@@ -55,38 +50,50 @@ export default function RantJournal() {
     }
   }, [selectedMood]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const newRant = {
-      title,
-      mood: selectedMood ? selectedMood.label : '',
-      content,
-      gifUrl,
-      date: new Date().toLocaleDateString(),
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    
+    const requestBody = {
+      title: title,
+      mood: selectedMood?.label,
+      content: content,
+      gifUrl: gifUrl, // If gifUrl is optional, make sure it's included properly
+      date: new Date().toISOString(),
     };
-
+    
     try {
       const response = await fetch('/api/rants', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newRant),
+        body: JSON.stringify(requestBody),
       });
-
+  
       if (response.ok) {
-        const savedRant = await response.json();
-        setRants([savedRant, ...rants]);
-        setTitle('');
-        setContent('');
-        setSelectedMood(null);
-        setGifUrl('');
+        const data = await response.json();
+        console.log('Rant saved successfully:', data);
       } else {
-        console.error('Error saving rant: ', response.statusText);
+        console.error('Error saving rant:', response.statusText);
       }
     } catch (error) {
-      console.error('Error saving rant: ', error);
+      console.error('Error saving rant:', error);
+    }
+  };
+  
+
+  const handleDelete = async (id) => {
+    try {
+      const response = await fetch(`/api/rants?id=${id}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        await fetchRants(); // Re-fetch rants after deletion
+      } else {
+        console.error('Error deleting rant: ', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting rant: ', error);
     }
   };
 
@@ -156,20 +163,23 @@ export default function RantJournal() {
 
       <div className="mt-6">
         <h3 className="text-xl font-medium text-gray-600 mb-4">Rant Entries</h3>
-          <ul className="space-y-4">
-            {(Array.isArray(rants) ? rants : []).map((rant, index) => (
-              <li
-                key={index}
-                className="p-5 rounded-lg bg-gray-100 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
-              >
-                <h3 className="text-xl font-semibold">{rant.title}</h3>
-                <p className="text-gray-700">{rant.content}</p>
-                {rant.gifUrl && <img src={rant.gifUrl} alt="Gif" className="mt-3" />}
-                <div className="text-sm text-gray-500 mt-2">{rant.date}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="space-y-4">
+  {(rants || []).map((rant) => (
+    <li key={rant.id} className="border-b pb-4">
+      <h3 className="text-lg font-semibold">{rant.title}</h3>
+      <p>{rant.content}</p>
+      <p className="text-sm text-gray-500">Mood: {rant.mood}</p>
+      <button
+        onClick={() => handleDelete(rant.id)}
+        className="mt-2 text-red-500 hover:text-red-700"
+      >
+        Delete
+      </button>
+    </li>
+  ))}
+</ul>
+
+      </div>
     </>
   );
 }

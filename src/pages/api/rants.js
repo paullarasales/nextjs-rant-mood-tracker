@@ -1,32 +1,40 @@
-import db from './db';
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 export default async function handler(req, res) {
-    if (req.method === 'GET') {
-      try {
-        const [rants] = await db.query('SELECT * FROM rants ORDER BY id DESC');
-        
-        res.setHeader('Cache-Control', 'no-store');
-        
-        res.status(200).json(rants);
-      } catch (error) {
-        console.error('Error fetching rants:', error);
-        res.status(500).json({ error: 'Error fetching rants' });
-      }
+  try {
+    if(req.method === 'GET') {
+      const query = 'SELECT * FROM rants ORDER BY date DESC';
+      const result = await pool.query(query);
+      return res.status(200).json(result.rows);
     } else if (req.method === 'POST') {
-      const { title, mood, content, gifUrl, date } = req.body;
-  
-      try {
-        const [result] = await db.query(
-          'INSERT INTO rants (title, mood, content, gifUrl, date) VALUES (?, ?, ?, ?, ?)',
-          [title, mood, content, gifUrl, date]
-        );
-        res.status(200).json({ message: 'Rant saved successfully', rantId: result.insertId });
-      } catch (error) {
-        console.error('Error saving rant:', error);
-        res.status(500).json({ error: 'Error saving rant' });
+      const { title, mood, content, gifUrl, date} = req.bofy;
+      
+      if (!title || !content) {
+        return res.status(400).json({ message: 'Title and content are required' });
       }
-    } else {
-      res.status(405).json({ error: 'Method not allowed' });
+
+      const query = `
+          INSERT INTO rants (title, mood, content, gifUrl, date)
+          VALUES ($1, $2, $3, $4, $5)
+          RETURNING id, title, mood, gifUrl, date
+      `;
+
+      const values = [title, mood, content, gifUrl, date];
+      const result = await pool.query(query, values);
+
+      return res.status(201).json(result.rows[0]);
+    } else if (req.method === 'DELETE') {
+      const { id } = req.query;
+      const deleteQuery = 'DELETE FROM rants WHERE id = $1';
+      await pool.query(deleteQuery, [id]);
+      return res.status(204).end(); 
     }
+  } catch (error) {
+    console.error('Error handling request:', error);
+    return res.status(500).json({ message: 'Interval server error' });
+  }
 }
-  
