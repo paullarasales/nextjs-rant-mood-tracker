@@ -5,13 +5,15 @@ const pool = new Pool({
 });
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
   try {
     if(req.method === 'GET') {
       const query = 'SELECT * FROM rants ORDER BY date DESC';
       const result = await pool.query(query);
+      console.log(result);
       return res.status(200).json(result.rows);
     } else if (req.method === 'POST') {
-      const { title, mood, content, gifUrl, date} = req.bofy;
+      const { title, mood, content, gifUrl, date} = req.body;
       
       if (!title || !content) {
         return res.status(400).json({ message: 'Title and content are required' });

@@ -16,12 +16,15 @@ export default function RantJournal() {
     { emoji: '🤔', label: 'Thoughtful' },
   ];
 
-  // Fetch rants from the database
   const fetchRants = async () => {
     try {
-      const response = await fetch('/api/rants');
+      const response = await fetch('/api/rants', { cache: 'no-cache' });
       const data = await response.json();
-      setRants(data);
+      const standarizedData = data.map(rant => ({
+        ...rant,
+        gifUrl: rant.gifurl
+      }));
+      setRants(standarizedData);
     } catch (error) {
       console.error('Error fetching rants: ', error);
     }
@@ -54,10 +57,10 @@ export default function RantJournal() {
     event.preventDefault();
     
     const requestBody = {
-      title: title,
+      title,
       mood: selectedMood?.label,
-      content: content,
-      gifUrl: gifUrl, // If gifUrl is optional, make sure it's included properly
+      content,
+      gifUrl,
       date: new Date().toISOString(),
     };
     
@@ -69,10 +72,14 @@ export default function RantJournal() {
         },
         body: JSON.stringify(requestBody),
       });
-  
+
       if (response.ok) {
-        const data = await response.json();
-        console.log('Rant saved successfully:', data);
+        const newRant = await response.json();
+        setRants([newRant, ...rants]);
+        setTitle('');
+        setContent('');
+        setSelectedMood(null);
+        setGifUrl('');
       } else {
         console.error('Error saving rant:', response.statusText);
       }
@@ -80,7 +87,6 @@ export default function RantJournal() {
       console.error('Error saving rant:', error);
     }
   };
-  
 
   const handleDelete = async (id) => {
     try {
@@ -88,7 +94,7 @@ export default function RantJournal() {
         method: 'DELETE',
       });
       if (response.ok) {
-        await fetchRants(); // Re-fetch rants after deletion
+        await fetchRants();
       } else {
         console.error('Error deleting rant: ', response.statusText);
       }
@@ -99,8 +105,8 @@ export default function RantJournal() {
 
   return (
     <>
-      <h1 className="text-4xl text-center font-semibold text-black tracking-wide">Rant and Mood Tracker</h1>
-      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
+      <h1 className="text-4xl text-center font-semibold text-gray-900 tracking-wide">Rant and Mood Tracker</h1>
+      <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-lg mt-8">
         <div>
           <label className="block text-gray-700 font-medium">Title</label>
           <input
@@ -111,6 +117,7 @@ export default function RantJournal() {
             placeholder="Enter a title"
           />
         </div>
+
         <div>
           <label className="block text-gray-700 font-medium">Choose Your Mood</label>
           <div className="flex space-x-2 mt-2">
@@ -119,7 +126,7 @@ export default function RantJournal() {
                 key={mood.label}
                 type="button"
                 onClick={() => setSelectedMood(mood)}
-                className={`p-2 rounded-lg transitions ${
+                className={`p-2 rounded-lg ${
                   selectedMood?.label === mood.label
                     ? 'bg-blue-100 ring-2 ring-blue-500'
                     : 'bg-gray-100 hover:bg-gray-200'
@@ -142,7 +149,6 @@ export default function RantJournal() {
             />
           </div>
         )}
-
         <div>
           <label className="block text-gray-700 font-medium">Content</label>
           <textarea
@@ -164,21 +170,26 @@ export default function RantJournal() {
       <div className="mt-6">
         <h3 className="text-xl font-medium text-gray-600 mb-4">Rant Entries</h3>
         <ul className="space-y-4">
-  {(rants || []).map((rant) => (
-    <li key={rant.id} className="border-b pb-4">
-      <h3 className="text-lg font-semibold">{rant.title}</h3>
-      <p>{rant.content}</p>
-      <p className="text-sm text-gray-500">Mood: {rant.mood}</p>
-      <button
-        onClick={() => handleDelete(rant.id)}
-        className="mt-2 text-red-500 hover:text-red-700"
-      >
-        Delete
-      </button>
-    </li>
-  ))}
-</ul>
-
+          {(rants || []).map((rant) => (
+            <li key={rant.id} className="bg-white p-6 rounded-lg shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-800">{rant.title}</h3>
+              <p className="text-gray-700 mt-2">{rant.content}</p>
+              {rant.gifUrl && (
+                <img
+                  src={rant.gifUrl}
+                  alt={`${rant.mood} mood gif`}
+                  className="w-full h-40 object-cover rounded-lg mt-4"
+                />
+              )}
+              <button
+                onClick={() => handleDelete(rant.id)}
+                className="mt-4 text-red-500 hover:text-red-700 font-medium"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </>
   );
