@@ -20,15 +20,20 @@ export default function RantJournal() {
     try {
       const response = await fetch('/api/rants', { cache: 'no-cache' });
       const data = await response.json();
-      const standarizedData = data.map(rant => ({
-        ...rant,
-        gifUrl: rant.gifurl
-      }));
-      setRants(standarizedData);
+      if (Array.isArray(data)) {
+        const standardizedData = data.map(rant => ({
+          ...rant,
+          gifUrl: rant.gifUrl
+        }));
+        setRants(standardizedData);
+      } else {
+        console.error('Expected an array of rants, but received:', data);
+      }
     } catch (error) {
-      console.error('Error fetching rants: ', error);
+      console.error('Error fetching rants:', error);
     }
   };
+  
 
   useEffect(() => {
     fetchRants();
